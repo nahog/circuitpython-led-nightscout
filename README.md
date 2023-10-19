@@ -14,7 +14,7 @@ A project that uses CircuitPython and reads glucose values from Nigthscout and d
 ## Assumptions and TODOs
 
 - The code always convert the glucose value to mmol/L (and assumes the value comes as mg/dL)
-- The code does not handle errors for now
+- The code does not handle specific errors for now
 - Off hours cannot break over the day, they must start at a minimum at 0
 - There are console messages than can be removed to optimize memory usage
 
@@ -38,6 +38,6 @@ Configuration and dependencies from `adafruit-circuitpython-bundle-8.x-mpy-20230
 
 ## What you need to change
 
-- Set your wifi name/pass on the `settings.toml` file
-- Set you nightscout url on `code.py` replacing the `<<NIGHTSCOUT_URL>>` section
-- (Optional) If your nightscout requires a token for the api, on the `code.py` set the `<<NIGHTSCOUT_API_TOKEN>>` see https://nightscout.github.io/nightscout/security/ 
+- Set your <<WIFI_NAME>> and <<WIFI_PASSWORD>> on the `settings.toml` file
+- Set you nightscout url on `code.py` replacing the `<<YOUR_NIGHTSCOUT_BASE_DOMAIN>>` and `<<YOUR_NIGHTSCOUT_API_TOKEN>>` placeholders
+- (Optional) If your nightscout does not requires a token for the api you can remove the `&token=" + NIGHTSCOUT_TOKEN` on the `code.py` when setting the `NIGHTSCOUT_URL` (for creating an api token, please see https://nightscout.github.io/nightscout/security/)
