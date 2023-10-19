@@ -16,8 +16,8 @@ import adafruit_minimqtt.adafruit_minimqtt as MQTT
 from adafruit_pixel_framebuf import PixelFramebuffer
 from adafruit_datetime import datetime
 
-NIGHTSCOUT_DOMAIN=<<YOUR_NIGHTSCOUT_BASE_DOMAIN>>
-NIGHTSCOUT_TOKEN=<<YOUR_NIGHTSCOUT_API_TOKEN>>
+NIGHTSCOUT_DOMAIN="<<YOUR_NIGHTSCOUT_BASE_DOMAIN>>"
+NIGHTSCOUT_TOKEN="<<YOUR_NIGHTSCOUT_API_TOKEN>>"
 NIGHTSCOUT_URL="https://" + NIGHTSCOUT_DOMAIN + "/api/v1/entries.json?count=1&token=" + NIGHTSCOUT_TOKEN
 
 URGENT_LOW=3
