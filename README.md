@@ -2,6 +2,8 @@
 
 A project that uses CircuitPython and reads glucose values from Nigthscout and display them in an RGB LED matrix
 
+![Example](example.png?raw=true "Example")
+
 ## Current functionality
 
 - Display the last SGV value from nighscout on the RGB LED Matrix
@@ -17,6 +19,7 @@ A project that uses CircuitPython and reads glucose values from Nigthscout and d
 - The code does not handle specific errors for now
 - Off hours cannot break over the day, they must start at a minimum at 0
 - There are console messages than can be removed to optimize memory usage
+- There is a bug where the first time it runs it takes one cycle to show the initial glucose value
 
 ## Includes
 
