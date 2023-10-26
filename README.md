@@ -38,6 +38,6 @@ Configuration and dependencies from `adafruit-circuitpython-bundle-8.x-mpy-20230
 
 ## What you need to change
 
-- Set your <<WIFI_NAME>> and <<WIFI_PASSWORD>> on the `settings.toml` file
-- Set you nightscout url on `code.py` replacing the `<<YOUR_NIGHTSCOUT_BASE_DOMAIN>>` and `<<YOUR_NIGHTSCOUT_API_TOKEN>>` placeholders
-- (Optional) If your nightscout does not requires a token for the api you can remove the `&token=" + NIGHTSCOUT_TOKEN` on the `code.py` when setting the `NIGHTSCOUT_URL` (for creating an api token, please see https://nightscout.github.io/nightscout/security/)
+- Set your <<YOUR_WIFI_NAME>> and <<YOUR_WIFI_PASSWORD>> on the `settings.toml` file
+- Set yout <<YOUR_NIGHTSCOUT_BASE_DOMAIN>> and <<YOUR_NIGHTSCOUT_API_TOKEN>> on the `settings.toml` file
+- (Optional) If your nightscout does not requires a token for the api you can remove the `&token=" + os.getenv("NIGHTSCOUT_TOKEN")` on the `code.py` when setting the `NIGHTSCOUT_URL` constant (for creating an api token, please see https://nightscout.github.io/nightscout/security/)

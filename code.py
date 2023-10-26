@@ -16,52 +16,76 @@ import adafruit_minimqtt.adafruit_minimqtt as MQTT
 from adafruit_pixel_framebuf import PixelFramebuffer
 from adafruit_datetime import datetime
 
-NIGHTSCOUT_DOMAIN="<<YOUR_NIGHTSCOUT_BASE_DOMAIN>>"
-NIGHTSCOUT_TOKEN="<<YOUR_NIGHTSCOUT_API_TOKEN>>"
-NIGHTSCOUT_URL="https://" + NIGHTSCOUT_DOMAIN + "/api/v1/entries.json?count=1&token=" + NIGHTSCOUT_TOKEN
+### CONSTANTS
 
-URGENT_LOW=3
-LOW=4
-HIGH=9
-URGENT_HIGH=12
+# NIGHTSCOUT CONFIG
+NIGHTSCOUT_URL = "https://" + os.getenv("NIGHTSCOUT_DOMAIN") + "/api/v1/entries.json?count=1&token=" + os.getenv("NIGHTSCOUT_TOKEN")
 
-OFF_HOURS_BEGIN=0
-OFF_HOURS_END=8
-TZ_OFFSET=1
+# GLUCOSE VALUE THRESHOLDS
+URGENT_LOW = 3
+LOW = 4
+HIGH = 9
+URGENT_HIGH = 12
 
-# HEX VALUES IN GGRRBB
-OFF_COLOR=0x000000
-BACKGROUND_COLOR=0x000000
-FOREGROUND_COLOR=0x111111
-URGENT_OUT_OF_RANGE_COLOR=0x00FF00
-OUT_OF_RANGE_COLOR=0x49E909
-IN_RANGE_COLOR=0xFF0000
+# OFF HOURS AND TIME CONFIG
+OFF_HOURS_BEGIN = 0
+OFF_HOURS_END = 8
+TZ_OFFSET = 1
 
-CYCLES_FOR_CLOCK_REFRESH=1800
-UPDATE_CYCLES=16
-TIME_BETWEEN_CYCLES_IN_SEC=2
+# COLOR / HEX VALUES IN GGRRBB
+OFF_COLOR = 0x000000
+BACKGROUND_COLOR = 0x000000
+FOREGROUND_COLOR = 0x111111
+URGENT_OUT_OF_RANGE_COLOR = 0x00FF00
+OUT_OF_RANGE_COLOR = 0x49E909
+IN_RANGE_COLOR = 0xFF0000
 
-disable_screen = False
+# REFRESH TIMERS / CYCLES
+CYCLES_FOR_CLOCK_REFRESH = 1800
+UPDATE_CYCLES = 16
+TIME_BETWEEN_CYCLES_IN_SEC = 2
 
-pixel_pin = board.GP6
-pixel_width = 16
-pixel_height = 10
+# RGB MATRIX DEFINITION
+PIXEL_PIN = board.GP6
+PIXEL_WIDTH = 16
+PIXEL_HEIGHT = 10
+PIXEL_ROTATION = 2
+PIXEL_ALTERNATING = False
+PIXEL_BRIGHTNESS = 0.1
 
+### GLOBAL VARIABLES
+
+# INTERFACE WITH THE LED MATRIX
 pixels = neopixel.NeoPixel(
-    pixel_pin,
-    pixel_width * pixel_height,
-    brightness=0.1,
-    auto_write=False,
+    PIXEL_PIN,
+    PIXEL_WIDTH * PIXEL_HEIGHT,
+    brightness = PIXEL_BRIGHTNESS,
+    auto_write = False,
 )
 
+# IN MEMORY BUFFER TO STORE PIXELS
 pixel_framebuf = PixelFramebuffer(
     pixels,
-    16,
-    10,
-    rotation=2,
-    alternating=False,
+    PIXEL_WIDTH,
+    PIXEL_HEIGHT,
+    rotation = PIXEL_ROTATION,
+    alternating = PIXEL_ALTERNATING,
 )
 
+# ON / OFF VARIABLE TO DISABLE THE SCREEN
+disable_screen = False
+
+### FUNCTIONS
+
+# UPDATES SCREEN TAKING INITO ACCOUNT THE OFF HOURS / SWITCH VARIABLE
+def update_screen(buffer):
+    if disable_screen:
+        buffer.fill(OFF_COLOR)
+        buffer.display()
+    else:
+        buffer.display()
+
+# MAP LED COLORS TO CONFIGURED GLUCOSE LIMITS
 def calc_color(number):
     if number < URGENT_LOW:
         return URGENT_OUT_OF_RANGE_COLOR
@@ -73,13 +97,10 @@ def calc_color(number):
         return OUT_OF_RANGE_COLOR
     return URGENT_OUT_OF_RANGE_COLOR
 
-def update_screen(buffer):
-    if disable_screen:
-        buffer.fill(OFF_COLOR)
-        buffer.display()
-    else:
-        buffer.display()
-
+# PRINT A NUMBER IN THE BUFFER BETWEEN 0 AND 29
+# IT USES DECIMALS FROM 0.0 to 19.9, AND ROUND NUMBERS FROM 20 TO 29
+# PRINT NUMBERS USING STRINGS BUT CUSTOMIZE THE No 1 TO FILL ONE 
+# EXTRA DIGIT ON A 16x10 LED MATRIX
 def print_num(buffer, number):
     buffer.fill(BACKGROUND_COLOR)
     number_values = number.split(".");
@@ -112,8 +133,11 @@ def print_num(buffer, number):
         buffer.pixel(14, 8, BACKGROUND_COLOR)
     update_screen(buffer)
 
+# UPDATE THE INTERNAL CLOCK USING NTP (FROM THE INTERNET)
 def update_date(pool):
     rtc.RTC().datetime = adafruit_ntp.NTP(pool, tz_offset=TZ_OFFSET).datetime
+
+### MAIN METHOD / LOOP
 
 try:
     pool = socketpool.SocketPool(wifi.radio)
