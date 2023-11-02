@@ -3,7 +3,6 @@ import os
 import rtc
 import ssl
 import json
-import math
 import time
 import wifi
 import board
@@ -12,7 +11,6 @@ import socketpool
 import microcontroller
 import adafruit_ntp
 import adafruit_requests
-import adafruit_minimqtt.adafruit_minimqtt as MQTT
 from adafruit_pixel_framebuf import PixelFramebuffer
 from adafruit_datetime import datetime
 
@@ -31,6 +29,7 @@ URGENT_HIGH = 12
 OFF_HOURS_BEGIN = 0
 OFF_HOURS_END = 8
 TZ_OFFSET = 1
+NOT_UPDATED_THRESHOLD_IN_SECONDS = 1200
 
 # COLOR / HEX VALUES IN GGRRBB
 OFF_COLOR = 0x000000
@@ -39,6 +38,7 @@ FOREGROUND_COLOR = 0x111111
 URGENT_OUT_OF_RANGE_COLOR = 0x00FF00
 OUT_OF_RANGE_COLOR = 0x49E909
 IN_RANGE_COLOR = 0xFF0000
+STRIKETHROUGH_COLOR = 0x113322
 
 # REFRESH TIMERS / CYCLES
 CYCLES_FOR_CLOCK_REFRESH = 1800
@@ -137,23 +137,23 @@ def print_num(buffer, number):
 def update_date(pool):
     rtc.RTC().datetime = adafruit_ntp.NTP(pool, tz_offset=TZ_OFFSET).datetime
 
+# CHECK IF THE LAST SGV VALUE IS NOT STALE
+def is_sgv_stale(current_datetime, sgv_time):
+    current_datetime_timestamp = current_datetime.timestamp()
+    sgv_time_timestamp = sgv_time.timestamp()
+    timestamp_diff = current_datetime_timestamp - sgv_time_timestamp
+    return timestamp_diff > NOT_UPDATED_THRESHOLD_IN_SECONDS
+
 ### MAIN METHOD / LOOP
 
 try:
     pool = socketpool.SocketPool(wifi.radio)
     requests = adafruit_requests.Session(pool, ssl.create_default_context())
-
+    update_date(pool)
     refresh_time_counter = CYCLES_FOR_CLOCK_REFRESH
     counter = UPDATE_CYCLES
     while True:
         counter += 1
-        refresh_time_counter += 1
-        if refresh_time_counter == CYCLES_FOR_CLOCK_REFRESH + 1:
-            old_datetime = datetime.now()
-            update_date(pool)
-            current_datetime = datetime.now()
-            print(f"time updated from {old_datetime.hour}:{old_datetime.minute:02}:{old_datetime.second:02} to {current_datetime.hour}:{current_datetime.minute:02}:{current_datetime.second:02}")
-            counter = 0
         if counter == UPDATE_CYCLES + 1:
             gc.collect()
             current_datetime = datetime.now()
@@ -167,17 +167,26 @@ try:
                 data = json.loads(response.text)
                 response.close()
                 sgv = round(data[0]["sgv"] / 18.0, 1)
-                print(f"got {sgv}")
+                sgv_time_string = data[0]["dateString"]
+                sgv_time_int = data[0]["date"] // 1000
+                sgv_time = datetime.fromtimestamp(sgv_time_int)
+                print(f"got {sgv} at {sgv_time_string}")
                 print_num(buffer=pixel_framebuf, number=str(sgv))
                 pixel_framebuf.line(0, 0, 15, 0, BACKGROUND_COLOR)
+                if is_sgv_stale(current_datetime, sgv_time):
+                    pixel_framebuf.line(1, 5, 14, 5, STRIKETHROUGH_COLOR)
+            counter = 0
+        refresh_time_counter += 1
+        if refresh_time_counter == CYCLES_FOR_CLOCK_REFRESH + 1:
+            old_datetime = datetime.now()
+            update_date(pool)
+            current_datetime = datetime.now()
+            print(f"time updated from {old_datetime.hour}:{old_datetime.minute:02}:{old_datetime.second:02} to {current_datetime.hour}:{current_datetime.minute:02}:{current_datetime.second:02}")
             counter = 0
         else:
             print(f"{counter}: waiting 2s")
             pixel_framebuf.line(0, 0, counter - 1, 0, FOREGROUND_COLOR)
-        time.sleep(TIME_BETWEEN_CYCLES_IN_SEC)
         update_screen(pixel_framebuf)
-
-    pixel_framebuf.fill(BACKGROUND_COLOR)
-    update_screen(pixel_framebuf)
+        time.sleep(TIME_BETWEEN_CYCLES_IN_SEC)
 except Exception:
     microcontroller.reset()
